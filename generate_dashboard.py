@@ -221,6 +221,74 @@ def export_html_dashboard(prospects: list, filename: str = "dashboard.html"):
       </div>
     </div>
 
+    <!-- Barre de Scan & Prospection en Direct (Multi-Sources) -->
+    <div class="glass p-4 rounded-2xl border border-indigo-500/30 bg-gradient-to-r from-indigo-950/30 via-slate-900/50 to-slate-950/30 mb-6 shadow-xl">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm shadow-inner">
+            <i class="fa-solid fa-radar text-xs"></i>
+          </div>
+          <div>
+            <h3 class="text-xs font-bold text-white flex items-center gap-2">
+              Scanner & Enrichir en Direct 
+              <span class="px-2 py-0.5 text-[10px] rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold">100% Automatique & 0 Bounce</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Scrape les entreprises enregistrées, détecte leurs sites, extrait leurs coordonnées et valide chaque email via DNS MX</p>
+          </div>
+        </div>
+        <div id="liveScanStatusText" class="text-xs font-medium text-indigo-300">Prêt pour la recherche</div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+        <div>
+          <label class="text-[10px] uppercase font-semibold text-slate-400 block mb-1">Ville cible</label>
+          <select id="scanCitySelect" class="w-full bg-slate-900 border border-slate-800 text-xs text-white rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 transition">
+            <option value="Aix-en-Provence:13100">Aix-en-Provence (13100)</option>
+            <option value="Marseille:13001">Marseille 1er (13001)</option>
+            <option value="Marseille:13006">Marseille 6e (13006)</option>
+            <option value="Marseille:13008">Marseille 8e (13008)</option>
+            <option value="Marseille:13010">Marseille 10e (13010)</option>
+            <option value="Aubagne:13400">Aubagne (13400)</option>
+            <option value="Salon-de-Provence:13300">Salon-de-Provence (13300)</option>
+            <option value="Martigues:13500">Martigues (13500)</option>
+            <option value="Marignane:13700">Marignane (13700)</option>
+            <option value="Vitrolles:13127">Vitrolles (13127)</option>
+            <option value="Gardanne:13120">Gardanne (13120)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] uppercase font-semibold text-slate-400 block mb-1">Métier / Activité</label>
+          <select id="scanTradeSelect" class="w-full bg-slate-900 border border-slate-800 text-xs text-white rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 transition">
+            <option value="plomberie">Plomberie & Chauffage</option>
+            <option value="electricite">Électricité générale</option>
+            <option value="serrurerie">Serrurerie & Dépannage</option>
+            <option value="climatisation">Climatisation & PAC</option>
+            <option value="menuiserie">Menuiserie & Fermetures</option>
+            <option value="renovation">Rénovation & Maçonnerie</option>
+            <option value="peinture batiment">Peinture & Façades</option>
+            <option value="architecture">Architecture & Maîtrise d'œuvre</option>
+            <option value="agence communication">Agences web & com (Sous-traitance)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-[10px] uppercase font-semibold text-slate-400 block mb-1">Volume de scan</label>
+          <select id="scanLimitSelect" class="w-full bg-slate-900 border border-slate-800 text-xs text-white rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 transition">
+            <option value="3">3 entreprises (rapide ~10s)</option>
+            <option value="6" selected>6 entreprises (~20s)</option>
+            <option value="10">10 entreprises (~35s)</option>
+          </select>
+        </div>
+
+        <div class="flex items-end">
+          <button onclick="startLiveScan()" id="btnStartLiveScan" class="w-full py-2 px-3 rounded-lg bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-indigo-600/25 transition">
+            <i class="fa-solid fa-magnifying-glass-chart"></i> Lancer le Scan en Direct
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Stat Cards par Besoin Métier -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
       <div onclick="filterCategory('create_site')" class="cursor-pointer glass p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:border-amber-400 transition">
@@ -548,19 +616,24 @@ def export_html_dashboard(prospects: list, filename: str = "dashboard.html"):
       if (stored) savedData = JSON.parse(stored);
     }} catch(e) {{}}
 
-    const data = initialData.map((item, idx) => {{
-      const saved = (savedData && savedData[idx]) ? savedData[idx] : {{}};
-      return {{
+    let data = [];
+    if (Array.isArray(savedData) && savedData.length > 0) {{
+      data = savedData.map(item => ({{
         ...item,
-        status: saved.status || item.status || 'À contacter',
-        // Conserver les coordonnées réelles certifiées de initialData en priorité
-        primary_email: (saved.primary_email && saved.primary_email.includes('@')) ? saved.primary_email : (item.primary_email || ''),
-        primary_phone: saved.primary_phone || item.primary_phone || '',
-        contacted_at: saved.contacted_at || item.contacted_at || null,
-        last_channel: saved.last_channel || item.last_channel || null,
-        contact_count: saved.contact_count !== undefined ? saved.contact_count : (item.contact_count || 0)
-      }};
-    }});
+        status: item.status || 'À contacter',
+        primary_email: item.primary_email || '',
+        primary_phone: item.primary_phone || '',
+        contacted_at: item.contacted_at || null,
+        last_channel: item.last_channel || null,
+        contact_count: item.contact_count !== undefined ? item.contact_count : 0
+      }}));
+      initialData.forEach(initItem => {{
+        const exists = data.some(d => (d.siren && initItem.siren && d.siren === initItem.siren) || (d.name && initItem.name && d.name.toLowerCase() === initItem.name.toLowerCase()));
+        if (!exists) data.push(initItem);
+      }});
+    }} else {{
+      data = [...initialData];
+    }}
 
     function resetToVerifiedData() {{
       if (confirm("Réinitialiser l'affichage avec la liste des emails et téléphones 100% réels et vérifiés ?\\n(Efface l'ancien cache contenant les adresses invalides)")) {{
@@ -1468,6 +1541,78 @@ Johad`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }}
+
+    async function startLiveScan() {{
+      const cityVal = document.getElementById('scanCitySelect').value.split(':');
+      const city = cityVal[0];
+      const postalCode = cityVal[1] || '13000';
+      const trade = document.getElementById('scanTradeSelect').value;
+      const limit = parseInt(document.getElementById('scanLimitSelect').value, 10) || 6;
+
+      const btn = document.getElementById('btnStartLiveScan');
+      const statusText = document.getElementById('liveScanStatusText');
+      const originalHtml = btn.innerHTML;
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Scan en cours...`;
+      statusText.innerHTML = `<span class="text-amber-400 animate-pulse"><i class="fa-solid fa-satellite-dish"></i> Scraping data.gouv & validation DNS MX...</span>`;
+
+      try {{
+        const response = await fetch('http://localhost:8088/api/scan', {{
+          method: 'POST',
+          headers: {{ 'Content-Type': 'application/json' }},
+          body: JSON.stringify({{
+            city: city,
+            postal_code: postalCode,
+            trade: trade,
+            limit: limit
+          }})
+        }});
+
+        if (!response.ok) {{
+          throw new Error('Erreur HTTP ' + response.status);
+        }}
+
+        const result = await response.json();
+        if (result.success && Array.isArray(result.prospects)) {{
+          let addedCount = 0;
+          result.prospects.forEach(p => {{
+            const exists = data.some(existing => 
+              (existing.siren && p.siren && existing.siren === p.siren) ||
+              (existing.name && p.name && existing.name.toLowerCase().trim() === p.name.toLowerCase().trim())
+            );
+            if (!exists) {{
+              const formatted = {{
+                ...p,
+                status: 'À contacter',
+                contacted_at: null,
+                last_channel: null,
+                contact_count: 0
+              }};
+              data.unshift(formatted);
+              addedCount++;
+            }}
+          }});
+
+          saveLocalData();
+          renderTable();
+          statusText.innerHTML = `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> +${{addedCount}} nouvelle(s) entreprise(s) ajoutée(s) !</span>`;
+        }} else {{
+          statusText.innerHTML = `<span class="text-rose-400">Échec du scan : ${{result.error || 'Erreur'}}</span>`;
+        }}
+      }} catch (err) {{
+        console.error("Scan error:", err);
+        statusText.innerHTML = `<span class="text-rose-400">Erreur réseau ou serveur inactif</span>`;
+      }} finally {{
+        btn.disabled = false;
+        btn.innerHTML = originalHtml;
+        setTimeout(() => {{
+          if (statusText.textContent.includes('ajoutée(s)')) {{
+            statusText.textContent = "Prêt pour la recherche";
+          }}
+        }}, 8000);
+      }}
     }}
 
     document.addEventListener('DOMContentLoaded', () => {{

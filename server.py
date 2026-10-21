@@ -84,6 +84,39 @@ class OutreachHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
+        elif parsed.path == '/api/scan':
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            try:
+                payload = json.loads(post_data.decode('utf-8')) if post_data else {}
+                trade = payload.get('trade', 'plomberie').strip()
+                postal_code = payload.get('postal_code', '13100').strip()
+                city = payload.get('city', 'Aix-en-Provence').strip()
+                limit = int(payload.get('limit', 5))
+
+                from prospector import search_companies_data_gouv, analyze_prospect
+                from generate_dashboard import get_lead_action_category
+
+                companies = search_companies_data_gouv(trade, postal_code, city, limit=limit)
+                new_prospects = []
+                for comp in companies:
+                    p = analyze_prospect(comp)
+                    p["action_cat"] = get_lead_action_category(p)
+                    new_prospects.append(p)
+
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "success": True,
+                    "count": len(new_prospects),
+                    "prospects": new_prospects
+                }, ensure_ascii=False).encode('utf-8'))
+            except Exception as e:
+                self.send_response(500)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"success": False, "error": str(e)}).encode('utf-8'))
         else:
             self.send_response(404)
             self.end_headers()
